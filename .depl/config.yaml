@@ -39,3 +39,37 @@ pipelines:
             - rust
           commands:
             - bash_c: cargo fmt -- --config tab_spaces=4,max_width=120 */**/*.rs
+  - title: upload-test
+    desc: "`cargo publish` test"
+    info: cargo-publish-dry-run@0.1.0
+    tags:
+      - cargo
+      - rust
+    default: false
+    artifacts: []
+    artifacts_placements: []
+    actions:
+      - title: Cargo Publish Check
+        info: cargo-publish-dry-run@0.1.0
+        tags: []
+        action:
+          type: observe
+          command:
+            bash_c: cargo publish --dry-run
+  - title: upload
+    desc: Publish crate
+    info: cargo-publish@0.1.0
+    tags:
+      - cargo
+      - rust
+    default: false
+    artifacts: []
+    artifacts_placements: []
+    actions:
+      - title: Cargo Publish
+        info: cargo-publish@0.1.0
+        tags: []
+        action:
+          type: observe
+          command:
+            bash_c: cargo publish
