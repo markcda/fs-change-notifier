@@ -91,3 +91,52 @@ pub async fn match_event(root: &Path, mut rx: mpsc::Receiver<Event>, exclude: &H
         }
     }
 }
+
+/// Matches event and returns changed file.
+///
+/// This function relies on given `root` and `exclude` set to watch changes happened
+/// only inside given directory and not with excluded files.
+pub async fn fetch_changed(root: &Path, mut rx: mpsc::Receiver<Event>, exclude: &HashSet<PathBuf>) -> Vec<PathBuf> {
+    loop {
+        let event = if let Some(ev) = rx.recv().await {
+            ev
+        } else {
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+            continue;
+        };
+
+        let mut included = vec![];
+        event.paths.iter().for_each(|event_path| {
+            exclude.iter().for_each(|exclude_path| {
+                let event = event_path.to_string_lossy();
+                let exclude = exclude_path.to_string_lossy();
+
+                let exclude = if exclude.contains('*') {
+                    let parts = exclude.split('*').collect::<Vec<_>>();
+                    if parts.len() != 2 {
+                        false
+                    } else if let Ok(relative_event) = event_path.strip_prefix(root).map(|p| p.to_string_lossy()) {
+                        relative_event.starts_with(parts[0]) && relative_event.ends_with(parts[1])
+                    } else {
+                        event.contains(parts[0]) && event.ends_with(parts[1])
+                    }
+                } else {
+                    event.contains(exclude.as_ref())
+                };
+
+                if !exclude {
+                    included.push(event_path.to_path_buf());
+                }
+            })
+        });
+
+        if !included.is_empty() {
+            match event.kind {
+                EventKind::Create(CreateKind::File) => return included,
+                EventKind::Modify(ModifyKind::Name(_)) | EventKind::Modify(ModifyKind::Data(_)) => return included,
+                EventKind::Remove(_) => return included,
+                _ => {}
+            }
+        }
+    }
+}

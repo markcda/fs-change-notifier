@@ -39,7 +39,7 @@ pipelines:
             - rust
           commands:
             - bash_c: cargo fmt -- --config tab_spaces=4,max_width=120 */**/*.rs
-  - title: upload-test
+  - title: publish-test
     desc: "`cargo publish` test"
     info: cargo-publish-dry-run@0.1.0
     tags:
@@ -56,7 +56,7 @@ pipelines:
           type: observe
           command:
             bash_c: cargo publish --dry-run
-  - title: upload
+  - title: publish
     desc: Publish crate
     info: cargo-publish@0.1.0
     tags:
