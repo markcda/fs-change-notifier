@@ -1,6 +1,24 @@
 //! FS changes' notifier.
 //!
 //! Simple library to watch file changes inside given directory.
+//!
+//! Usage example:
+//!
+//! ```rust,ignore
+//! use fs_change_notifier::{create_watcher, RecursiveMode};
+//!
+//! let (mut wr, rx) = create_watcher(|e| log::error!("{e:?}")).unwrap();
+//! wr.watch(&PathBuf::from("."), RecursiveMode::Recursive).unwrap();
+//!
+//! loop {
+//!     tokio::select! {
+//!         _ = your_job => {},
+//!         _ = match_event(rx, &exclude) => {
+//!             // do your logic on fs update
+//!         },
+//!     }
+//! }
+//! ```
 
 #![deny(warnings, missing_docs, clippy::todo, clippy::unimplemented)]
 
@@ -13,24 +31,6 @@ use tokio::sync::mpsc;
 pub use notify::RecursiveMode;
 
 /// Creates a watcher and an associated MPSC channel receiver.
-///
-/// Usage example:
-///
-/// ```rust,ignore
-/// use fs_change_notifier::{create_watcher, RecursiveMode};
-///
-/// let (mut wr, rx) = create_watcher(|e| log::error!("{e:?}")).unwrap();
-/// wr.watch(&PathBuf::from("."), RecursiveMode::Recursive).unwrap();
-///
-/// loop {
-///     tokio::select! {
-///         _ = your_job => {},
-///         _ = match_event(rx, &exclude) => {
-///             // do your logic on fs update
-///         },
-///     }
-/// }
-/// ```
 pub fn create_watcher(
     err_handler: impl Fn(notify::Error) + Send + 'static,
 ) -> anyhow::Result<(Box<dyn Watcher>, mpsc::Receiver<Event>)> {
