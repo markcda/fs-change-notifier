@@ -1,0 +1,11 @@
+[package]
+name = "fs-change-notifier"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+authors = ["Klimenty Titov <aclo.create@gmail.com>"]
+
+[dependencies]
+anyhow = "1.0"
+notify = "8.0"
+tokio = { version = "1", features = ["sync", "time"] }

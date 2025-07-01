@@ -1,0 +1,41 @@
+project_name: fs-change-notifier
+version: 5
+langs:
+  - rust
+targets: []
+cache_files:
+  - .git
+  - Cargo.lock
+  - target
+variables: []
+pipelines:
+  - title: common-ops
+    desc: Lint & format
+    info: cargo-common-ops@0.1.0
+    tags:
+      - cargo
+      - rust
+    default: true
+    artifacts: []
+    artifacts_placements: []
+    actions:
+      - title: Lint
+        info: cargo-clippy@0.1.0
+        tags: []
+        action:
+          type: pre_build
+          supported_langs:
+            - rust
+          commands:
+            - bash_c: cargo clippy
+              show_success_output: true
+      - title: Format
+        info: cargo-format@0.1.0
+        tags: []
+        exec_in_project_dir: true
+        action:
+          type: pre_build
+          supported_langs:
+            - rust
+          commands:
+            - bash_c: cargo fmt -- --config tab_spaces=4,max_width=120 */**/*.rs
