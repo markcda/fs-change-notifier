@@ -34,7 +34,7 @@ pub use notify::RecursiveMode;
 /// Creates a watcher and an associated MPSC channel receiver.
 pub fn create_watcher(
     err_handler: impl Fn(notify::Error) + Send + 'static,
-) -> anyhow::Result<(Box<dyn Watcher>, mpsc::Receiver<Event>)> {
+) -> anyhow::Result<(Box<dyn Watcher + Send>, mpsc::Receiver<Event>)> {
     let (tx, rx) = mpsc::channel::<Event>(1000);
     let mut watcher = notify::recommended_watcher(move |ev: notify::Result<Event>| match ev {
         Ok(ev) => {
@@ -45,7 +45,7 @@ pub fn create_watcher(
 
     watcher.configure(notify::Config::default().with_follow_symlinks(false))?;
 
-    Ok((Box::new(watcher) as Box<dyn Watcher>, rx))
+    Ok((Box::new(watcher) as Box<dyn Watcher + Send>, rx))
 }
 
 /// Matches event and returns on included ones.
