@@ -1,75 +1,42 @@
 project_name: fs-change-notifier
-version: 5
-langs:
-  - rust
-targets: []
-cache_files:
+version: 7
+ignore_files:
   - .git
-  - Cargo.lock
-  - target
-variables: []
+actions:
+  - info: cargo-fmt@0.1.0
+    exec_in_project_dir: true
+    action:
+      type: staged
+      stage: build
+      cmd: cargo fmt -- --config tab_spaces=4,max_width=120 */**/*.rs
+  - info: cargo-lint@0.1.0
+    action:
+      type: staged
+      stage: build
+      cmd: cargo clippy
+      show_success_output: true
+  - info: cargo-publish@0.1.0
+    action:
+      type: observe
+      cmd: cargo publish
+      ignore_fails: true
+      show_success_output: true
+      show_cmd: false
+      only_when_fresh: false
 pipelines:
-  - title: common-ops
-    desc: Lint & format
-    info: cargo-common-ops@0.1.0
-    tags:
-      - cargo
-      - rust
+  - title: ops
+    desc: ""
+    info: rust-simple@0.1.0
     default: true
-    artifacts: []
-    artifacts_placements: []
     actions:
       - title: Lint
-        info: cargo-clippy@0.1.0
-        tags: []
-        action:
-          type: pre_build
-          supported_langs:
-            - rust
-          commands:
-            - bash_c: cargo clippy
-              show_success_output: true
+        used: cargo-lint@0.1.0
       - title: Format
-        info: cargo-format@0.1.0
-        tags: []
-        exec_in_project_dir: true
-        action:
-          type: pre_build
-          supported_langs:
-            - rust
-          commands:
-            - bash_c: cargo fmt -- --config tab_spaces=4,max_width=120 */**/*.rs
-  - title: publish-test
-    desc: "`cargo publish` test"
-    info: cargo-publish-dry-run@0.1.0
-    tags:
-      - cargo
-      - rust
-    default: false
-    artifacts: []
-    artifacts_placements: []
-    actions:
-      - title: Cargo Publish Check
-        info: cargo-publish-dry-run@0.1.0
-        tags: []
-        action:
-          type: observe
-          command:
-            bash_c: cargo publish --dry-run
+        used: cargo-fmt@0.1.0
   - title: publish
-    desc: Publish crate
-    info: cargo-publish@0.1.0
-    tags:
-      - cargo
-      - rust
+    desc: ""
+    info: rust-publish@0.1.0
     default: false
-    artifacts: []
-    artifacts_placements: []
     actions:
-      - title: Cargo Publish
-        info: cargo-publish@0.1.0
-        tags: []
-        action:
-          type: observe
-          command:
-            bash_c: cargo publish
+      - title: Publish
+        used: cargo-publish@0.1.0

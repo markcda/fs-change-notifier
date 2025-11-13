@@ -63,7 +63,10 @@ pub async fn match_event(root: &Path, mut rx: mpsc::Receiver<Event>, exclude: &H
 
         let has_non_excluded = event.paths.iter().any(|event_path| {
             !exclude.iter().any(|exclude_path| {
-                let event = event_path.to_string_lossy();
+                let event = event_path
+                    .strip_prefix(root)
+                    .expect("watcher wasn't started at given root!")
+                    .to_string_lossy();
                 let exclude = exclude_path.to_string_lossy();
 
                 if exclude.contains('*') {
@@ -71,7 +74,13 @@ pub async fn match_event(root: &Path, mut rx: mpsc::Receiver<Event>, exclude: &H
                     if parts.len() != 2 {
                         false
                     } else if let Ok(relative_event) = event_path.strip_prefix(root).map(|p| p.to_string_lossy()) {
-                        relative_event.starts_with(parts[0]) && relative_event.ends_with(parts[1])
+                        if let Some(starting) = relative_event.strip_suffix(parts[1])
+                            && starting.contains(parts[0])
+                        {
+                            true
+                        } else {
+                            false
+                        }
                     } else {
                         event.contains(parts[0]) && event.ends_with(parts[1])
                     }
@@ -108,7 +117,10 @@ pub async fn fetch_changed(root: &Path, mut rx: mpsc::Receiver<Event>, exclude: 
         let mut included = vec![];
         event.paths.iter().for_each(|event_path| {
             exclude.iter().for_each(|exclude_path| {
-                let event = event_path.to_string_lossy();
+                let event = event_path
+                    .strip_prefix(root)
+                    .expect("watcher wasn't started at given root!")
+                    .to_string_lossy();
                 let exclude = exclude_path.to_string_lossy();
 
                 let exclude = if exclude.contains('*') {
@@ -116,7 +128,13 @@ pub async fn fetch_changed(root: &Path, mut rx: mpsc::Receiver<Event>, exclude: 
                     if parts.len() != 2 {
                         false
                     } else if let Ok(relative_event) = event_path.strip_prefix(root).map(|p| p.to_string_lossy()) {
-                        relative_event.starts_with(parts[0]) && relative_event.ends_with(parts[1])
+                        if let Some(starting) = relative_event.strip_suffix(parts[1])
+                            && starting.contains(parts[0])
+                        {
+                            true
+                        } else {
+                            false
+                        }
                     } else {
                         event.contains(parts[0]) && event.ends_with(parts[1])
                     }
