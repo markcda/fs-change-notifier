@@ -52,7 +52,7 @@ pub fn create_watcher(
 ///
 /// This function relies on given `root` and `exclude` set to watch changes happened
 /// only inside given directory and not with excluded files.
-pub async fn match_event(root: &Path, mut rx: mpsc::Receiver<Event>, exclude: &HashSet<PathBuf>) {
+pub async fn match_event(root: &Path, rx: &mut mpsc::Receiver<Event>, exclude: &HashSet<PathBuf>) {
     loop {
         let event = if let Some(ev) = rx.recv().await {
             ev

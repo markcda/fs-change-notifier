@@ -1,42 +1,85 @@
 project_name: fs-change-notifier
-version: 7
+version: 8
 ignore_files:
   - .git
+  - Cargo.lock
+  - target
+cache_files:
+  - Cargo.lock
+  - target
 actions:
   - info: cargo-fmt@0.1.0
+    requirements:
+      - type: in_path
+        executable: cargo
+        desc: "Install `cargo` via your package manager or with this command: `curl https://sh.rustup.rs -sSf | sh`."
     exec_in_project_dir: true
+    skip_sync: false
     action:
       type: staged
       stage: build
       cmd: cargo fmt -- --config tab_spaces=4,max_width=120 */**/*.rs
   - info: cargo-lint@0.1.0
+    requirements:
+      - type: in_path
+        executable: cargo
+        desc: "Install `cargo` via your package manager or with this command: `curl https://sh.rustup.rs -sSf | sh`."
     action:
       type: staged
       stage: build
       cmd: cargo clippy
       show_success_output: true
-  - info: cargo-publish@0.1.0
+  - info: cargo-release@0.1.0
+    tags:
+      - rust
+      - cargo
+    requirements:
+      - type: in_path
+        executable: cargo
+        desc: "Install `cargo` via your package manager or with this command: `curl https://sh.rustup.rs -sSf | sh`."
     action:
-      type: observe
-      cmd: cargo publish
-      ignore_fails: true
-      show_success_output: true
-      show_cmd: false
-      only_when_fresh: false
+      type: staged
+      stage: build
+      cmd: cargo build --release
 pipelines:
-  - title: ops
-    desc: ""
-    info: rust-simple@0.1.0
+  - title: build
+    desc: Build `fs-change-notifier`
+    info: fs-change-notifier-build@0.1.0
+    tags:
+      - rust
+      - cargo
+      - clippy
+      - fmt
     default: true
     actions:
       - title: Lint
         used: cargo-lint@0.1.0
       - title: Format
         used: cargo-fmt@0.1.0
-  - title: publish
-    desc: ""
-    info: rust-publish@0.1.0
+      - title: Build
+        used: cargo-release@0.1.0
+  - title: ci
+    desc: "`fs-change-notifier` CI"
+    info: fs-change-notifier-ci@0.1.0
+    tags:
+      - rust
+      - cargo
+      - clippy
     default: false
     actions:
-      - title: Publish
-        used: cargo-publish@0.1.0
+      - title: Lint
+        used: cargo-lint@0.1.0
+      - title: Build
+        used: cargo-release@0.1.0
+    gh_opts:
+      on_push_branches:
+        - master
+      on_pull_requests_branches:
+        - master
+      preflight_steps:
+        - name: Install Rust Toolchain
+          uses: actions-rust-lang/setup-rust-toolchain@v1
+          with:
+            components: clippy
+            target: x86_64-unknown-linux-gnu
+            toolchain: 1.92.0
